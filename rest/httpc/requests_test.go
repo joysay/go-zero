@@ -10,9 +10,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	ztrace "github.com/zeromicro/go-zero/core/trace"
+	"github.com/zeromicro/go-zero/core/trace/tracetest"
 	"github.com/zeromicro/go-zero/rest/httpx"
 	"github.com/zeromicro/go-zero/rest/internal/header"
 	"github.com/zeromicro/go-zero/rest/router"
+	tcodes "go.opentelemetry.io/otel/codes"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -42,7 +45,7 @@ func TestDoRequest_NotFound(t *testing.T) {
 	defer svr.Close()
 	req, err := http.NewRequest(http.MethodPost, svr.URL, nil)
 	assert.Nil(t, err)
-	req.Header.Set(header.ContentType, header.JsonContentType)
+	req.Header.Set(header.ContentType, header.ContentTypeJson)
 	resp, err := DoRequest(req)
 	assert.Nil(t, err)
 	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
@@ -59,6 +62,7 @@ func TestDoRequest_Moved(t *testing.T) {
 }
 
 func TestDo(t *testing.T) {
+	me := tracetest.NewInMemoryExporter(t)
 	type Data struct {
 		Key    string `path:"key"`
 		Value  int    `form:"value"`
@@ -86,6 +90,13 @@ func TestDo(t *testing.T) {
 	resp, err := Do(context.Background(), http.MethodPost, svr.URL+"/nodes/:key", data)
 	assert.Nil(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, 1, len(me.GetSpans()))
+	span := me.GetSpans()[0].Snapshot()
+	assert.Equal(t, sdktrace.Status{
+		Code: tcodes.Unset,
+	}, span.Status())
+	assert.Equal(t, 0, len(span.Events()))
+	assert.Equal(t, 7, len(span.Attributes()))
 }
 
 func TestDo_Ptr(t *testing.T) {

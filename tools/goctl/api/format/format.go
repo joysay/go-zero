@@ -15,6 +15,8 @@ import (
 	"github.com/zeromicro/go-zero/core/errorx"
 	"github.com/zeromicro/go-zero/tools/goctl/api/parser"
 	"github.com/zeromicro/go-zero/tools/goctl/api/util"
+	"github.com/zeromicro/go-zero/tools/goctl/pkg/env"
+	apiF "github.com/zeromicro/go-zero/tools/goctl/pkg/parser/api/format"
 	"github.com/zeromicro/go-zero/tools/goctl/util/pathx"
 )
 
@@ -40,8 +42,19 @@ var (
 func GoFormatApi(_ *cobra.Command, _ []string) error {
 	var be errorx.BatchError
 	if VarBoolUseStdin {
-		if err := apiFormatReader(os.Stdin, VarStringDir, VarBoolSkipCheckDeclare); err != nil {
-			be.Add(err)
+		if env.UseExperimental() {
+			data, err := io.ReadAll(os.Stdin)
+			if err != nil {
+				be.Add(err)
+			} else {
+				if err := apiF.Source(data, os.Stdout); err != nil {
+					be.Add(err)
+				}
+			}
+		} else {
+			if err := apiFormatReader(os.Stdin, VarStringDir, VarBoolSkipCheckDeclare); err != nil {
+				be.Add(err)
+			}
 		}
 	} else {
 		if len(VarStringDir) == 0 {
@@ -90,6 +103,10 @@ func apiFormatReader(reader io.Reader, filename string, skipCheckDeclare bool) e
 
 // ApiFormatByPath format api from file path
 func ApiFormatByPath(apiFilePath string, skipCheckDeclare bool) error {
+	if env.UseExperimental() {
+		return apiF.File(apiFilePath)
+	}
+
 	data, err := os.ReadFile(apiFilePath)
 	if err != nil {
 		return err
@@ -165,7 +182,9 @@ func apiFormat(data string, skipCheckDeclare bool, filename ...string) (string, 
 				tapCount++
 			}
 		}
-		util.WriteIndent(&builder, tapCount)
+		if line != "" {
+			util.WriteIndent(&builder, tapCount)
+		}
 		builder.WriteString(line + pathx.NL)
 		if strings.HasSuffix(noCommentLine, leftParenthesis) || strings.HasSuffix(noCommentLine, leftBrace) {
 			tapCount++

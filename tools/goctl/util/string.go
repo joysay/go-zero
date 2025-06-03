@@ -111,3 +111,44 @@ func isGolangKeyword(s string) bool {
 	_, ok := goKeyword[s]
 	return ok
 }
+
+func TrimWhiteSpace(s string) string {
+	r := strings.NewReplacer(" ", "", "\t", "", "\n", "", "\f", "", "\r", "")
+	return r.Replace(s)
+}
+
+func IsEmptyStringOrWhiteSpace(s string) bool {
+	v := TrimWhiteSpace(s)
+	return len(v) == 0
+}
+
+func FieldsAndTrimSpace(s string, f func(r rune) bool) []string {
+	fields := strings.FieldsFunc(s, f)
+	var resp []string
+	for _, v := range fields {
+		val := TrimWhiteSpace(v)
+		if len(val) > 0 {
+			resp = append(resp, v)
+		}
+	}
+	return resp
+}
+
+func Unquote(s string) string {
+	if len(s) == 0 {
+		return s
+	}
+	left := s[0]
+
+	if left == '`' || left == '"' {
+		s = s[1:len(s)]
+	}
+	if len(s) == 0 {
+		return s
+	}
+	right := s[len(s)-1]
+	if right == '`' || right == '"' {
+		s = s[0 : len(s)-1]
+	}
+	return s
+}

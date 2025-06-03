@@ -1,10 +1,10 @@
 package service
 
 import (
-	"log"
+	"sync"
 
+	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/core/proc"
-	"github.com/zeromicro/go-zero/core/syncx"
 	"github.com/zeromicro/go-zero/core/threading"
 )
 
@@ -36,7 +36,7 @@ type (
 // NewServiceGroup returns a ServiceGroup.
 func NewServiceGroup() *ServiceGroup {
 	sg := new(ServiceGroup)
-	sg.stopOnce = syncx.Once(sg.doStop)
+	sg.stopOnce = sync.OnceFunc(sg.doStop)
 	return sg
 }
 
@@ -51,7 +51,7 @@ func (sg *ServiceGroup) Add(service Service) {
 // Also, quitting this method will close the logx output.
 func (sg *ServiceGroup) Start() {
 	proc.AddShutdownListener(func() {
-		log.Println("Shutting down...")
+		logx.Info("Shutting down services in group")
 		sg.stopOnce()
 	})
 
@@ -68,7 +68,7 @@ func (sg *ServiceGroup) doStart() {
 
 	for i := range sg.services {
 		service := sg.services[i]
-		routineGroup.RunSafe(func() {
+		routineGroup.Run(func() {
 			service.Start()
 		})
 	}
@@ -77,9 +77,14 @@ func (sg *ServiceGroup) doStart() {
 }
 
 func (sg *ServiceGroup) doStop() {
+	group := threading.NewRoutineGroup()
 	for _, service := range sg.services {
-		service.Stop()
+		// new variable to avoid closure problems, can be removed after go 1.22
+		// see https://golang.org/doc/faq#closures_and_goroutines
+		service := service
+		group.Run(service.Stop)
 	}
+	group.Wait()
 }
 
 // WithStart wraps a start func as a Service.

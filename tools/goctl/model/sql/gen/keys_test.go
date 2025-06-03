@@ -34,7 +34,7 @@ func TestGenCacheKeys(t *testing.T) {
 		Comment:    "姓名",
 		SeqInIndex: 2,
 	}
-	primariCacheKey, uniqueCacheKey := genCacheKeys(parser.Table{
+	primariCacheKey, uniqueCacheKey := genCacheKeys("cache", parser.Table{
 		Name: stringx.From("user"),
 		Db:   stringx.From("go_zero"),
 		PrimaryKey: parser.Primary{
@@ -76,9 +76,9 @@ func TestGenCacheKeys(t *testing.T) {
 				VarExpression:     `cacheGoZeroUserIdPrefix = "cache:goZero:user:id:"`,
 				KeyLeft:           "goZeroUserIdKey",
 				KeyRight:          `fmt.Sprintf("%s%v", cacheGoZeroUserIdPrefix, id)`,
-				DataKeyRight:      `fmt.Sprintf("%s%v", cacheGoZeroUserIdPrefix, data.ID)`,
+				DataKeyRight:      `fmt.Sprintf("%s%v", cacheGoZeroUserIdPrefix, data.Id)`,
 				KeyExpression:     `goZeroUserIdKey := fmt.Sprintf("%s%v", cacheGoZeroUserIdPrefix, id)`,
-				DataKeyExpression: `goZeroUserIdKey := fmt.Sprintf("%s%v", cacheGoZeroUserIdPrefix, data.ID)`,
+				DataKeyExpression: `goZeroUserIdKey := fmt.Sprintf("%s%v", cacheGoZeroUserIdPrefix, data.Id)`,
 				FieldNameJoin:     []string{"id"},
 			})
 		}())
@@ -129,7 +129,7 @@ func TestGenCacheKeys(t *testing.T) {
 		}())
 	})
 	t.Run("no database name", func(t *testing.T) {
-		primariCacheKey, _ = genCacheKeys(parser.Table{
+		primariCacheKey, _ = genCacheKeys("cache", parser.Table{
 			Name: stringx.From("user"),
 			Db:   stringx.From(""),
 			PrimaryKey: parser.Primary{
@@ -170,9 +170,9 @@ func TestGenCacheKeys(t *testing.T) {
 				VarExpression:     `cacheUserIdPrefix = "cache:user:id:"`,
 				KeyLeft:           "userIdKey",
 				KeyRight:          `fmt.Sprintf("%s%v", cacheUserIdPrefix, id)`,
-				DataKeyRight:      `fmt.Sprintf("%s%v", cacheUserIdPrefix, data.ID)`,
+				DataKeyRight:      `fmt.Sprintf("%s%v", cacheUserIdPrefix, data.Id)`,
 				KeyExpression:     `userIdKey := fmt.Sprintf("%s%v", cacheUserIdPrefix, id)`,
-				DataKeyExpression: `userIdKey := fmt.Sprintf("%s%v", cacheUserIdPrefix, data.ID)`,
+				DataKeyExpression: `userIdKey := fmt.Sprintf("%s%v", cacheUserIdPrefix, data.Id)`,
 				FieldNameJoin:     []string{"id"},
 			})
 		}())
